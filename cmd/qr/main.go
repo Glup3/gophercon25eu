@@ -24,7 +24,7 @@ func run() error {
 		standard.WithLogoSizeMultiplier(2),
 		standard.WithQRWidth(30),
 	}
-	writer, err := standard.New("static/qrcode.png", options...)
+	writer, err := standard.New("public/qrcode.png", options...)
 	if err != nil {
 		return fmt.Errorf("create writer failed: %v", err)
 	}

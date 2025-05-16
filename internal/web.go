@@ -19,17 +19,32 @@ func handlePublicAssets() http.Handler {
 	return fs
 }
 
+type customResponseWriter struct {
+	http.ResponseWriter
+	statusCode int
+}
+
+func (w *customResponseWriter) WriteHeader(statusCode int) {
+	w.statusCode = statusCode
+	w.ResponseWriter.WriteHeader(statusCode)
+}
+
 func loggingMiddleware(logger *slog.Logger, h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		wr := &customResponseWriter{
+			ResponseWriter: w,
+			statusCode:     http.StatusOK, // default status code before WriteHeader is called
+		}
+		h.ServeHTTP(wr, r)
 		logger.Info(
 			"web request",
-			slog.String("path", r.URL.Path),
+			slog.Int("status", wr.statusCode),
 			slog.String("method", r.Method),
+			slog.String("path", r.URL.Path),
 			slog.String("remoteAddr", r.RemoteAddr),
-			slog.String("userAgent", r.UserAgent()),
 			slog.String("referer", r.Referer()),
+			slog.String("userAgent", r.UserAgent()),
 		)
-		h.ServeHTTP(w, r)
 	})
 }
 

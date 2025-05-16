@@ -34,11 +34,16 @@ func loggingMiddleware(logger *slog.Logger, h http.Handler) http.Handler {
 }
 
 type Config struct {
-	Port string
+	Hostname string
+	Port     string
 }
 
 func NewConfig(getenv func(string) string) *Config {
-	config := &Config{Port: "8080"}
+	config := &Config{Hostname: "127.0.0.1", Port: "8080"}
+	hostname := getenv("HOSTNAME")
+	if hostname != "" {
+		config.Hostname = hostname
+	}
 	port := getenv("PORT")
 	if port != "" {
 		config.Port = port

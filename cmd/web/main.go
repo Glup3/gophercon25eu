@@ -30,7 +30,7 @@ func run(ctx context.Context, getenv func(string) string) error {
 	config := internal.NewConfig(getenv)
 	srv := internal.NewServer(logger, config)
 	httpServer := &http.Server{
-		Addr:    net.JoinHostPort("127.0.0.1", config.Port),
+		Addr:    net.JoinHostPort(config.Hostname, config.Port),
 		Handler: srv,
 	}
 

@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	public "github.com/glup3/gophercon25eu/public"
+	internal "github.com/glup3/gophercon25eu/internal"
 )
 
 func main() {
@@ -25,20 +25,13 @@ func main() {
 func run(ctx context.Context, getenv func(string) string) error {
 	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
 	defer cancel()
-	mux := http.NewServeMux()
+
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-
-	staticFS := http.FS(public.StaticFiles)
-	fs := http.FileServer(staticFS)
-	mux.Handle("/", fs)
-
-	port := getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
+	config := internal.NewConfig(getenv)
+	srv := internal.NewServer(logger, config)
 	httpServer := &http.Server{
-		Addr:    net.JoinHostPort("localhost", port),
-		Handler: mux,
+		Addr:    net.JoinHostPort("localhost", config.Port),
+		Handler: srv,
 	}
 
 	go func() {

@@ -35,7 +35,7 @@ func run(ctx context.Context, getenv func(string) string) error {
 	}
 
 	go func() {
-		logger.Info("http server started", slog.String("addr", httpServer.Addr))
+		logger.Info("http server started", slog.String("addr", httpServer.Addr), slog.Bool("useEmbeddedFS", config.UseEmbeddedFS))
 		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.Error("error listening and serving", slog.Any("error", err))
 		}

@@ -3,20 +3,23 @@ package internal
 import (
 	"log/slog"
 	"net/http"
+	"os"
 
 	"github.com/glup3/gophercon25eu/public"
 )
 
 func NewServer(logger *slog.Logger, config *Config) http.Handler {
 	mux := http.NewServeMux()
-	mux.Handle("/", loggingMiddleware(logger, handlePublicAssets()))
+	mux.Handle("/", loggingMiddleware(logger, handlePublicAssets(config)))
 	return mux
 }
 
-func handlePublicAssets() http.Handler {
-	staticFS := http.FS(public.StaticFiles)
-	fs := http.FileServer(staticFS)
-	return fs
+func handlePublicAssets(config *Config) http.Handler {
+	if config.UseEmbeddedFS {
+		return http.FileServer(http.FS(public.StaticFiles))
+	}
+
+	return http.FileServer(http.FS(os.DirFS(config.StaticFilesPath)))
 }
 
 type customResponseWriter struct {
@@ -49,19 +52,31 @@ func loggingMiddleware(logger *slog.Logger, h http.Handler) http.Handler {
 }
 
 type Config struct {
-	Hostname string
-	Port     string
+	Hostname        string
+	Port            string
+	UseEmbeddedFS   bool
+	StaticFilesPath string
 }
 
 func NewConfig(getenv func(string) string) *Config {
-	config := &Config{Hostname: "127.0.0.1", Port: "8080"}
 	hostname := getenv("HOSTNAME")
-	if hostname != "" {
-		config.Hostname = hostname
+	if hostname == "" {
+		hostname = "127.0.0.1"
 	}
 	port := getenv("PORT")
-	if port != "" {
-		config.Port = port
+	if port == "" {
+		port = "8080"
 	}
-	return config
+	useEmbeddedFs := getenv("USE_EMBEDDED_FS") == "true"
+	staticPath := getenv("STATIC_FILES_PATH")
+	if staticPath == "" {
+		staticPath = "public"
+	}
+
+	return &Config{
+		Hostname:        hostname,
+		Port:            port,
+		UseEmbeddedFS:   useEmbeddedFs,
+		StaticFilesPath: staticPath,
+	}
 }
